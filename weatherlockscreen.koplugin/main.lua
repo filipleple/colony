@@ -119,7 +119,6 @@ function WeatherLockscreen:getSubMenuItems()
                     default = _("Detailed"),
                     card = _("Minimal"),
                     reading = _("Cover"),
-                    retro = _("Retro Analog"),
                 }
                 return T(_("Display Style (%1)"), style_names[display_style])
             end,
@@ -152,23 +151,6 @@ function WeatherLockscreen:getSubMenuItems()
                         G_reader_settings:saveSetting("weather_display_style", "card")
                         G_reader_settings:flush()
                         logger.dbg("WeatherLockscreen: Saved display style: card")
-                        if touchmenu_instance then
-                            touchmenu_instance.item_table = self:getSubMenuItems()
-                            touchmenu_instance:updateItems()
-                        end
-                    end,
-                },
-                {
-                    text = _("Retro Analog"),
-                    checked_func = function()
-                        local display_style = G_reader_settings:readSetting("weather_display_style") or "default"
-                        return display_style == "retro"
-                    end,
-                    keep_menu_open = true,
-                    callback = function(touchmenu_instance)
-                        G_reader_settings:saveSetting("weather_display_style", "retro")
-                        G_reader_settings:flush()
-                        logger.dbg("WeatherLockscreen: Saved display style: retro")
                         if touchmenu_instance then
                             touchmenu_instance.item_table = self:getSubMenuItems()
                             touchmenu_instance:updateItems()
