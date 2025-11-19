@@ -27,7 +27,6 @@ local InputDialog = require("ui/widget/inputdialog")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local WeatherUtils = require("weather_utils")
 
 local WeatherLockscreen = WidgetContainer:extend {
     name = "weatherlockscreen",
@@ -35,7 +34,10 @@ local WeatherLockscreen = WidgetContainer:extend {
 }
 
 function WeatherLockscreen:getPluginDir()
-    return WeatherUtils:getPluginDir()
+    local callerSource = debug.getinfo(2, "S").source
+    if callerSource:find("^@") then
+        return callerSource:gsub("^@(.*)/[^/]*", "%1")
+    end
 end
 
 function WeatherLockscreen:init()
