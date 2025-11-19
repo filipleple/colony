@@ -27,50 +27,22 @@ local InputDialog = require("ui/widget/inputdialog")
 local logger = require("logger")
 local _ = require("gettext")
 local T = require("ffi/util").template
-local WeatherUtils = require("weather_utils")
 
 local WeatherLockscreen = WidgetContainer:extend {
     name = "weatherlockscreen",
     is_doc_only = false,
-    default_location = "London",
-    default_api_key = "637e03f814b440f782675255250411",
-    default_temp_scale = "C",
 }
 
-local WEATHER_ICON_SIZE = 200 -- Size of the weather icon in pixels
-
-function WeatherLockscreen:getCacheMaxAge()
-    return WeatherUtils:getCacheMaxAge()
-end
-
 function WeatherLockscreen:getPluginDir()
-    return WeatherUtils:getPluginDir()
-end
-
-function WeatherLockscreen:installIcons()
-    return WeatherUtils:installIcons(function() return self:getPluginDir() end)
+    local callerSource = debug.getinfo(2, "S").source
+    if callerSource:find("^@") then
+        return callerSource:gsub("^@(.*)/[^/]*", "%1")
+    end
 end
 
 function WeatherLockscreen:init()
-    self:installIcons()
     self.ui.menu:registerToMainMenu(self)
     self:patchScreensaver()
-end
-
-function WeatherLockscreen:addToMainMenu(menu_items)
-    menu_items.weather_lockscreen = {
-        text = _("Weather Lockscreen"),
-        sub_item_table_func = function()
-            return self:getSubMenuItems()
-        end,
-        sorting_hint = "tools",
-    }
-end
-
-function WeatherLockscreen:getSubMenuItems()
-    local menu_items = {
-    }
-    return menu_items
 end
 
 function WeatherLockscreen:patchScreensaver()
@@ -167,7 +139,7 @@ function WeatherLockscreen:patchScreensaver()
                     end
 
                     -- Add weather option
-                    local weather_item = genMenuItem(_("Show weather on sleep screen"), "screensaver_type", "weather")
+                    local weather_item = genMenuItem(_("Show The Colony on sleep screen"), "screensaver_type", "weather")
 
                     -- Insert before "Leave screen as-is" option (position 6)
                     table.insert(wallpaper_submenu, 6, weather_item)
@@ -183,96 +155,6 @@ function WeatherLockscreen:patchScreensaver()
             return result
         end
     end
-end
-
--- Weather API functions
-function WeatherLockscreen:formatHourLabel(hour, twelve_hour_clock)
-    return WeatherUtils:formatHourLabel(hour, twelve_hour_clock)
-end
-
-function WeatherLockscreen:getMoonPhaseIcon(moon_phase)
-    return WeatherUtils:getMoonPhaseIcon(moon_phase)
-end
-
-function WeatherLockscreen:saveWeatherCache(weather_data)
-    return WeatherUtils:saveWeatherCache(weather_data)
-end
-
-function WeatherLockscreen:loadWeatherCache()
-    return WeatherUtils:loadWeatherCache(function() return self:getCacheMaxAge() end)
-end
-
-function WeatherLockscreen:clearCache()
-    return WeatherUtils:clearCache()
-end
-
-function WeatherLockscreen:createHeaderWidgets(header_font_size, header_margin, weather_data, text_color, is_cached)
-    local header_widgets = {}
-    local show_header = G_reader_settings:nilOrTrue("weather_show_header")
-
-    if show_header and weather_data.current.location then
-        table.insert(header_widgets, LeftContainer:new {
-            dimen = { w = Screen:getWidth(), h = header_font_size + header_margin * 2 },
-            FrameContainer:new {
-                padding = header_margin,
-                margin = 0,
-                bordersize = 0,
-                TextWidget:new {
-                    text = weather_data.current.location,
-                    face = Font:getFace("cfont", header_font_size),
-                    fgcolor = text_color,
-                },
-            },
-        })
-    end
-
-    if show_header and weather_data.current.timestamp then
-        local timestamp = weather_data.current.timestamp
-        local year, month, day, hour, min = timestamp:match("(%d+)-(%d+)-(%d+) (%d+):(%d+)")
-        local formatted_time = ""
-        if year and month and day and hour and min then
-            local month_names = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" }
-            local month_name = month_names[tonumber(month)] or month
-            local twelve_hour_clock = G_reader_settings:isTrue("twelve_hour_clock")
-            local hour_num = tonumber(hour)
-            local time_str
-            if twelve_hour_clock then
-                local period = hour_num >= 12 and "PM" or "AM"
-                local display_hour = hour_num % 12
-                if display_hour == 0 then display_hour = 12 end
-                time_str = display_hour .. ":" .. min .. " " .. period
-            else
-                time_str = hour .. ":" .. min
-            end
-            formatted_time = month_name .. " " .. tonumber(day) .. ", " .. time_str
-        else
-            formatted_time = timestamp
-        end
-
-        -- Add asterisk if data is cached
-        if is_cached then
-            formatted_time = formatted_time .. " *"
-        end
-
-        table.insert(header_widgets, RightContainer:new {
-            dimen = { w = Screen:getWidth(), h = header_font_size + header_margin * 2 },
-            FrameContainer:new {
-                padding = header_margin,
-                margin = 0,
-                bordersize = 0,
-                TextWidget:new {
-                    text = formatted_time,
-                    face = Font:getFace("cfont", header_font_size),
-                    fgcolor = text_color,
-                },
-            },
-        })
-    end
-
-    return OverlapGroup:new {
-        dimen = { w = Screen:getWidth(), h = header_font_size + header_margin * 2 },
-        unpack(header_widgets)
-    }
 end
 
 
